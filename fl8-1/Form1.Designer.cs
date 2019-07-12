@@ -1,4 +1,4 @@
-﻿namespace LoadingObjFormat
+﻿namespace fl8_1
 {
     partial class Form1
     {

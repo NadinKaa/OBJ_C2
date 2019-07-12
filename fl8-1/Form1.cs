@@ -7,11 +7,13 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.Globalization;
 
-namespace LoadingObjFormat
+namespace fl8_1
 {
     public partial class Form1 : Form
     {
         private GLControl _glControl;
+
+        private int _amountOfVertices;
 
         private PointF _firstPoint = new PointF(-0.5f, -0.5f);
         private PointF _secondPoint = new PointF(0.5f, -0.5f);
@@ -163,20 +165,81 @@ namespace LoadingObjFormat
         {
             // активация функций перед рисованием 
             GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.Lighting);
-            GL.Enable(EnableCap.Light0);
-            GL.Enable(EnableCap.ColorMaterial);
+
+            // Пример плоскости из двух треугольников
+            // v1------v0(v3)
+            // |     / |
+            // |   /   |
+            // | /     |
+            // v2------v5
+            // (v4)
+
+            // Координаты вершин.
+            float[] vertices = new float[]
+            {
+                // v0-v1-v2
+                0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, -0.5f, 0f,
+                // v3-v4-v5
+                0.5f, 0.5f, 0f, -0.5f, -0.5f, 0f, 0.5f, -0.5f, 0f,
+                // v6-v7-v8
+                0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, 0.5f, -0.5f, -1f
+            };
+
+            // Цвета вершин.
+            // Пример. v0: (0f, 1f, 0f) - зелёный цвет
+            float[] colors = new float[]
+            {
+                // v0-v1-v2
+                0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f,
+                // v3-v4-v5
+                0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f,
+                // v6-v7-v8
+                1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f
+            };
+
+            // Индексы вершин
+            int[] indices = new int[]
+            {
+                // v0-v1-v2
+                0, 1, 2,
+                // v3-v4-v5
+                3, 4, 5,
+                // v6-v7-v8
+                6, 7, 8
+            };
+
+            // Инициализируем шейдеры и получаем ссылку на шейдерную программу
+            int program = ShaderProgram.InitAndGetShaderProgramId(
+                "Shaders/ColorVertexShader.glsl",
+                "Shaders/ColorFragmentShaser.glsl");
+
+            // Инициализируем вершины и получаем количество вершин
+            _amountOfVertices = VertexBuffers.InitAndGetAmountOfVertices(
+                program, vertices, colors, indices);
+
+            // Получаем ссылку на переменную uMvpMatrix в вершинном шейдере
+            int uMvpMatrixLocation = GL.GetUniformLocation(program, "uMvpMatrix");
+            if (uMvpMatrixLocation < 0)
+            {
+                MessageBox.Show("Не могу получить ссылку на переменную uMvpMatrix");
+                return;
+            }
+
+            // Создаём матрицу mvpMatrix
+            //Matrix4 mvpMatrix = Matrix4.Identity;
+            Matrix4 mvpMatrix =
+                Matrix4.CreateScale(5f) *
+                Matrix4.CreateTranslation(new Vector3(0f, 0f, 0f)) *
+                Matrix4.LookAt(new Vector3(4f, 5f, 7f), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f)) *
+                Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(50), _glControl.Width / (float)_glControl.Height, 0.1f, 1000f);
+
+            // Передаём матрицу mvpMatrix в вершинный шейдер
+            GL.UniformMatrix4(uMvpMatrixLocation, false, ref mvpMatrix);
         }
 
-        private void DrawObject()       // ПРОРИСОВКА ТРЕУГОЛЬНИКА
+        private void DrawObject()
         {
-            GL.Begin(PrimitiveType.Triangles);
-            {
-                GL.Vertex2(_firstPoint.X, _firstPoint.Y);
-                GL.Vertex2(_secondPoint.X, _secondPoint.Y);
-                GL.Vertex2(_thirdPoint.X, _thirdPoint.Y);
-            }
-            GL.End();
+            GL.DrawElements(PrimitiveType.Triangles, _amountOfVertices, DrawElementsType.UnsignedInt, 0);
         }
 
         private void GLControl_Paint(object sender, PaintEventArgs e)
@@ -187,14 +250,12 @@ namespace LoadingObjFormat
             // Set object color
             GL.Color4(_objectColor);    // установка цвета 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            // прорисовка треугольника
-            GL.PushMatrix();    // сохраняет текущую матрицу
+
+            if (_amountOfVertices != 0)
             {
-                GL.LoadIdentity();  // новая единичная матрица
-                GL.Translate(_objectXPos, _objectYPos, _objectZPos); // сдвигает начало системы координат на ( Dx,Dy,Dz ).
                 DrawObject();
             }
-            GL.PushMatrix(); // вернуться к старым координатам
+
             _glControl.SwapBuffers();
         }
 
@@ -339,7 +400,7 @@ namespace LoadingObjFormat
                     TM[counterF].w2 = TM[counterF].w2.Split('/')[0];
                     TM[counterF].w3 = TM[counterF].w3.Split('/')[0];
                     string TempF = TM[counterF].w1.ToString() + " " + TM[counterF].w2.ToString() + " " + TM[counterF].w3.ToString();  // формируем строку "2 1 4"
-                    Line_F[counterF] = new Poligons(TM[counterF].w1, TM[counterF].w2, TM[counterF].w3);  // или TempF.Split(' ')); //  в TempF лежит строка типа "2 1 4", разбиваем ее по " " в структуру 
+                    //Line_F[counterF] = new Poligons(TM[counterF].w1, TM[counterF].w2, TM[counterF].w3);  // или TempF.Split(' ')); //  в TempF лежит строка типа "2 1 4", разбиваем ее по " " в структуру 
                     counterF++;
                     // разбить по "/" в структуру полигоны
                     // 
