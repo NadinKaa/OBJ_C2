@@ -8,8 +8,7 @@ namespace fl8_1
         public static int InitAndGetAmountOfVertices(
             int program,
             float[] vertices,
-            float[] colors,
-            int[] indices)
+            float[] colors)
         {
             // Write vertex information to buffer object
             if (!InitArrayBuffer(program, vertices, 3, "aPosition"))
@@ -24,15 +23,7 @@ namespace fl8_1
             // Unbind the buffer object
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 
-            // Create a buffer
-            int indexBuffer;
-            GL.GenBuffers(1, out indexBuffer);
-
-            // Write the vertices to the buffer object
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBuffer);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, sizeof(int) * indices.Length, indices, BufferUsageHint.StaticDraw);
-
-            return indices.Length;
+            return vertices.Length / 3;
         }
 
         private static bool InitArrayBuffer(
