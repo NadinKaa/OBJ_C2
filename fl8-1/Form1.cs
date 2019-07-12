@@ -5,7 +5,7 @@ using System.IO;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
-
+using System.Globalization;
 
 namespace LoadingObjFormat
 {
@@ -33,23 +33,50 @@ namespace LoadingObjFormat
         int coord_index = 0, Fase_index = 0;
         float coords;
         int Index;
-        struct coord
+        struct Coord
         {
-            float x;
-            float y;
-            float z;
+            public float x;
+            public float y;
+            public float z;
+            public Coord(string[] args)
+            {
+                //x = Convert.ToSingle(args[0]);
+                x = float.Parse(args[0], CultureInfo.InvariantCulture.NumberFormat);
+                y = float.Parse(args[1], CultureInfo.InvariantCulture.NumberFormat);
+                z = float.Parse(args[2], CultureInfo.InvariantCulture.NumberFormat);
+            }
         }
 
-        struct poligons
+        struct Poligons
         {
-            coord point;
+            //Coord point;
+            public int v1, v2, v3; // три вершины полигона
+            public Poligons (string t1, string t2, string t3)
+            {
+                v1 = int.Parse(t1);
+                v2 = int.Parse(t2);
+                v3 = int.Parse(t3);
+            }
         }
 
-        coord Mymass;
-        poligons models;
+        struct TempMass
+        {
+            public string w1, w2, w3;
+            public TempMass(string[] args)
+            {
+                w1 = args[0];
+                w2 = args[1];
+                w3 = args[2];
+            }
+        }
+
+
+        Coord Mymass;
+        Poligons models;
         int point = 0;
         int p = 0;
 
+        
 
         private enum ActivePlane    // Активная плоскость 0 - XY, 1 - XZ
         {
@@ -239,47 +266,88 @@ namespace LoadingObjFormat
             else
             {
                 MessageBox.Show("File not opened!");
-                MessageBox.Show("File not opened!");
-                MessageBox.Show("File not opened!");
             }
         }
 
-        void Read_File_Obj (string name_file)
-        {
-            int counter = 0;
-            string line;
-            
-            //var StroksFile = File.ReadAllLines(name_file);
-            StreamReader StroksFile = new StreamReader(name_file);
-            int File_Size = StroksFile.ReadToEnd().Length;
-            //for (int i=0; i< len; i++)
-            // создание динамических массивов???
-            float Tmp_Coords = File_Size;
-            int Tmp_FaseArray = File_Size;
-            coord_index = 0;
-            //int[] arr = new int[number];
-            line = Convert.ToString(File.ReadLines(name_file));
+        //void Read_File_Obj (string name_file)
+        //{
+        //    int counter = 0;
+        //    string line;
 
-            int countpoint = 0;
-            int countfase = 0;
-            while ((line=StroksFile.ReadLine()) != null)  // не работает!!!
+        //    //var StroksFile = File.ReadAllLines(name_file);
+        //    StreamReader StroksFile = new StreamReader(name_file);
+        //    int File_Size = StroksFile.ReadToEnd().Length;
+        //    //for (int i=0; i< len; i++)
+        //    // создание динамических массивов???
+        //    float Tmp_Coords = File_Size;
+        //    int Tmp_FaseArray = File_Size;
+        //    coord_index = 0;
+        //    //int[] arr = new int[number];
+        //    for (int i = 0; i < File_Size; i++)
+        //    {
+        //        line = StroksFile.ReadLine(); //Convert.ToString(File.ReadLines(name_file));
+
+        //        int countpoint = 0;
+        //        int countfase = 0;
+        //        while ((line != null))  // не работает!!!
+        //        {   // вершины
+        //            char[] line_copy = line.ToCharArray(); // преобразуем строку в массив
+        //            countpoint = line.Length;
+        //            if ((line_copy[0] == 'v') && (line_copy[1] == ' '))
+        //            {
+        //                line_copy[0] = ' '; // обнуление символа 
+        //                line_copy[1] = ' '; // обнуление символа
+        //                line = new string(line_copy);
+        //                line.TrimStart(' ');
+        //                countpoint = line.Length;
+        //            }
+        //            counter++;
+        //        }
+        //        StroksFile.Close();
+
+        //    }
+        void Read_File_Obj(string name_file)
+        {
+            string[] Lines;
+            string Vert = "v "; //вершины
+            string Poli = "f "; // полигоны
+            int counterV = 0;
+            int counterF = 0;
+            Lines = System.IO.File.ReadAllLines(name_file); // все строки в массив из файла
+            Coord[] Line_V = new Coord[Lines.Length];
+            string[] Line_F = new string[Lines.Length];
+            TempMass[] TM = new TempMass[Lines.Length];
+            // Poligons[] Line_F = new Poligons(Lines.Length); 
+            foreach (string Line in Lines)  // для каждой строки в массиве
             {
-                char[] line_copy = line.ToCharArray(); // преобразуем строку в массив
-                countpoint = line.Length;
-                if ((line_copy[0] =='v') && (line_copy[1]==' '))
+                if (Line.StartsWith(Vert) != false) // если вершина
                 {
-                    line_copy[0] = ' '; // обнуление символа 
-                    line_copy[1] = ' '; // обнуление символа
-                    line = new string(line_copy);
-                    line.TrimStart(' ');
-                    countpoint = line.Length;
+                    // отсечь первые два символа
+                    string Line1 = Line.Substring(2);
+                    Line_V[counterV] = new Coord (Line1.Split(' ')); // разбить на структуру координаты в структуру 
+                    counterV++;
+
                 }
 
-                counter++;
+                if (Line.StartsWith(Poli) != false) // если полигон
+                {
+                    // отсечь первые два символа
+                    string Line1 = Line.Substring(2);
+                    // разбить по " " 
+                    TM[counterF] = new TempMass(Line1.Split(' '));
+                    TM[counterF].w1 = TM[counterF].w1.Split('/')[0];
+                    TM[counterF].w2 = TM[counterF].w2.Split('/')[0];
+                    TM[counterF].w3 = TM[counterF].w3.Split('/')[0];
+                    string TempF = TM[counterF].w1.ToString() + " " + TM[counterF].w2.ToString() + " " + TM[counterF].w3.ToString();  // формируем строку "2 1 4"
+                    Line_F[counterF] = new Poligons(TM[counterF].w1, TM[counterF].w2, TM[counterF].w3);  // или TempF.Split(' ')); //  в TempF лежит строка типа "2 1 4", разбиваем ее по " " в структуру 
+                    counterF++;
+                    // разбить по "/" в структуру полигоны
+                    // 
+                }
             }
-            StroksFile.Close(); 
 
-            
+        }
+
         }
 
         //private void btnLoadFileOBJ_Click(object sender, EventArgs e)
@@ -297,7 +365,7 @@ namespace LoadingObjFormat
         //    //char[] chm = MasStr.ToCharArray(); 
 
     }
-    }
+    //}
 class TextFileLoader
 {
     // Singleton
