@@ -21,6 +21,10 @@ namespace fl8_1
 
         private int _program;
 
+        private int _uModelMatrixLocation;
+        private int _uViewMatrixLocation;
+        private int _uProjMatrixLocation;
+
         private List<float> _vertices = new List<float>();
         private List<float> _colors = new List<float>();
         private List<float> _normals = new List<float>();
@@ -37,6 +41,8 @@ namespace fl8_1
         private float _mouseClickYPos = 0;
         private bool _isLeftDown = false;
         private bool _isRightDown = false;
+
+        private SimpleRotator _simpleRotator;
 
         private float _objectXPos = 0f;
         private float _objectYPos = 0f;
@@ -104,7 +110,7 @@ namespace fl8_1
             _glControl = new GLControl();
             _glControl.Load += GLControl_Load;
             _glControl.Paint += GLControl_Paint;
-            _glControl.MouseDown += GLControl_MousDown;
+            _glControl.MouseDown += GLControl_MouseDown;
             _glControl.MouseUp += GLControl_MouseUP;
             _glControl.MouseMove += GLControl_MouseMove;
             _glControl.Dock = DockStyle.Fill;
@@ -112,67 +118,78 @@ namespace fl8_1
             _tableLayoutPanel.SetColumnSpan(_glControl, 2);
         }
 
-        private Vector2 GetOpenGLMouseCoord(Vector2 coord)  // вектор координат 
-        {
-            Vector2 newCoord = new Vector2();
-            newCoord.X = coord.X / _glControl.Width * 2f;
-            newCoord.X -= 1f;
-            newCoord.Y = (2 - 2 * coord.Y / _glControl.Height);
-            newCoord.Y -= 1;
-            return newCoord;
-        }
+        //private Vector2 GetOpenGLMouseCoord(Vector2 coord)
+        //{
+        //    Vector2 newCoord = new Vector2();
+        //    newCoord.X = coord.X / _glControl.Width * 2f;
+        //    newCoord.X -= 1f;
+        //    newCoord.Y = (2 - 2 * coord.Y / _glControl.Height);
+        //    newCoord.Y -= 1;
+        //    return newCoord;
+        //}
 
         private void GLControl_MouseMove(object sender, MouseEventArgs e)   // перетаскивание объекта мышью
         {
-            Vector2 mouseCoord = GetOpenGLMouseCoord(new Vector2(e.X, e.Y));
-            float currentMouseXPos = mouseCoord.X;
-            float currentMouseYPos = mouseCoord.Y;
+            //Vector2 mouseCoord = GetOpenGLMouseCoord(new Vector2(e.X, e.Y));
+            //_simpleRotator.DoMouseDrag(mouseCoord.X, mouseCoord.Y);
 
-            if (_isRightDown)
-            {
-                //Console.WriteLine(string.Format("({0}, {1})", e.X - _mouseClickXPos, _mouseClickYPos - e.Y));
-                _objectXPos = currentMouseXPos;
-                _objectYPos = currentMouseYPos;
-            }
+            _simpleRotator.DoMouseDrag(e.X, e.Y);
             _glControl.Invalidate();
+            //if (_isRightDown)
+            //{
+            //    //Console.WriteLine(string.Format("({0}, {1})", e.X - _mouseClickXPos, _mouseClickYPos - e.Y));
+            //    _objectXPos = currentMouseXPos;
+            //    _objectYPos = currentMouseYPos;
+            //}
+            //_glControl.Invalidate();
         }
 
-        private void GLControl_MousDown(object sender, MouseEventArgs e)    // контроль нажатия кнопок мыши
+        private void GLControl_MouseDown(object sender, MouseEventArgs e)    // контроль нажатия кнопок мыши
         {
-            if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
-            {
-                Vector2 mouseCoord = GetOpenGLMouseCoord(new Vector2(e.X, e.Y));
-                _mouseClickXPos = mouseCoord.X;
-                _mouseClickYPos = mouseCoord.Y;
-                _objectXPos = _mouseClickXPos;
-                _objectYPos = _mouseClickYPos;
+            //Vector2 mouseCoord = GetOpenGLMouseCoord(new Vector2(e.X, e.Y));
+            //_simpleRotator.DoMouseDown(mouseCoord.X, mouseCoord.Y);
 
-                if (e.Button == MouseButtons.Left)  //  если левая кнопка
-                {
-                    _isLeftDown = true; // установить левый флаг
-                }
-                else       // иначе
-                {
-                    _isRightDown = true;    // установить правый
-                }
-            }
+            _simpleRotator.DoMouseDown(e.X, e.Y);
             _glControl.Invalidate();
+            //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
+            //{
+            //    Vector2 mouseCoord = GetOpenGLMouseCoord(new Vector2(e.X, e.Y));
+            //    _mouseClickXPos = mouseCoord.X;
+            //    _mouseClickYPos = mouseCoord.Y;
+            //    _objectXPos = _mouseClickXPos;
+            //    _objectYPos = _mouseClickYPos;
+
+            //    if (e.Button == MouseButtons.Left)  //  если левая кнопка
+            //    {
+            //        _isLeftDown = true; // установить левый флаг
+            //    }
+            //    else       // иначе
+            //    {
+            //        _isRightDown = true;    // установить правый
+            //    }
+            //}
+            //_glControl.Invalidate();
         }
 
         private void GLControl_MouseUP(object sender, MouseEventArgs e)    // контроль отжатия кнопок мыши
         {
-            if (e.Button == MouseButtons.Left)
-            {
-                _isLeftDown = false;    // снять флаг с левой кнопки
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                _isRightDown = false;   // снять флаг с правой кнопки
-            }
+            _simpleRotator.DoMouseUp();
+            _glControl.Invalidate();
+
+            //if (e.Button == MouseButtons.Left)
+            //{
+            //    _isLeftDown = false;    // снять флаг с левой кнопки
+            //}
+            //else if (e.Button == MouseButtons.Right)
+            //{
+            //    _isRightDown = false;   // снять флаг с правой кнопки
+            //}
         }
 
         private void GLControl_Load(object sender, EventArgs e)     // активация функций перед рисованием 
         {
+            _simpleRotator = new SimpleRotator(DrawObject, _glControl.Width, _glControl.Height, 10f);
+
             // активация функций перед рисованием 
             GL.Enable(EnableCap.DepthTest);
 
@@ -224,28 +241,41 @@ namespace fl8_1
                 "Shaders/ColorVertexShader.glsl",
                 "Shaders/ColorFragmentShaser.glsl");
 
-            // Получаем ссылку на переменную uMvpMatrix в вершинном шейдере
-            int uMvpMatrixLocation = GL.GetUniformLocation(_program, "uMvpMatrix");
-            if (uMvpMatrixLocation < 0)
-            {
-                MessageBox.Show("Не могу получить ссылку на переменную uMvpMatrix");
-                return;
-            }
+            // Получаем ссылки на матрицы из вершинного шейдера
+            _uModelMatrixLocation = GetUniformLocation("uModelMatrix");
+            _uViewMatrixLocation = GetUniformLocation("uViewMatrix");
+            _uProjMatrixLocation = GetUniformLocation("uProjMatrix");
+            if (_uModelMatrixLocation < 0 || _uViewMatrixLocation < 0 || _uProjMatrixLocation < 0) return;
 
-            // Создаём матрицу mvpMatrix
-            //Matrix4 mvpMatrix = Matrix4.Identity;
-            Matrix4 mvpMatrix =
+            // Создаём матрицы
+            Matrix4 modelMatrix =
                 Matrix4.CreateScale(5f) *
-                Matrix4.CreateTranslation(new Vector3(0f, 0f, 0f)) *
-                Matrix4.LookAt(new Vector3(4f, 5f, 7f), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f)) *
-                Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(50), _glControl.Width / (float)_glControl.Height, 0.1f, 1000f);
+                Matrix4.CreateTranslation(new Vector3(0f, 0f, 0f));
+            Matrix4 viewMatrix = _simpleRotator.GetViewMatrix();
+            Matrix4 projMatrix = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(50), _glControl.Width / (float)_glControl.Height, 0.1f, 1000f);
+            // Передаём в вертексный шейдер
+            GL.UniformMatrix4(_uModelMatrixLocation, false, ref modelMatrix);
+            GL.UniformMatrix4(_uViewMatrixLocation, false, ref viewMatrix);
+            GL.UniformMatrix4(_uProjMatrixLocation, false, ref projMatrix);
+        }
 
-            // Передаём матрицу mvpMatrix в вершинный шейдер
-            GL.UniformMatrix4(uMvpMatrixLocation, false, ref mvpMatrix);
+        private int GetUniformLocation(string name)
+        {
+            int location = GL.GetUniformLocation(_program, name);
+            if (location < 0)
+            {
+                MessageBox.Show("Не могу получить ссылку на переменную с именем " + name);
+                return -1;
+            }
+            return location;
         }
 
         private void DrawObject()
         {
+            // Забираем матрицу из Simple Rotator и передаём в вертексный шейдер
+            Matrix4 viewMatrix = _simpleRotator.GetViewMatrix();
+            GL.UniformMatrix4(_uViewMatrixLocation, false, ref viewMatrix);
+
             GL.DrawArrays(PrimitiveType.Triangles, 0, _amountOfVertices);
         }
 
