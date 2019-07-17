@@ -188,7 +188,7 @@ namespace fl8_1
 
         private void GLControl_Load(object sender, EventArgs e)     // активация функций перед рисованием 
         {
-            _simpleRotator = new SimpleRotator(DrawObject, _glControl.Width, _glControl.Height, 10f);
+            _simpleRotator = new SimpleRotator(DrawObject, _glControl.Width, _glControl.Height, 35f);
 
             // активация функций перед рисованием 
             GL.Enable(EnableCap.DepthTest);
@@ -348,7 +348,14 @@ namespace fl8_1
         {
             OpenFileDialog OpenFile = new OpenFileDialog();
             OpenFile.Filter = "OBJ files (*.obj)|*.obj|All files (*.*)|*.*";
-            OpenFile.InitialDirectory = Directory.GetCurrentDirectory();
+
+            // This will get the current WORKING directory (i.e. \bin\Debug)
+            string workingDirectory = Environment.CurrentDirectory;
+            // or: Directory.GetCurrentDirectory() gives the same result
+            // This will get the current PROJECT directory
+            string projectDirectory = Directory.GetParent(workingDirectory).Parent.FullName;
+            OpenFile.InitialDirectory = projectDirectory;
+
             OpenFile.Title = "Please select an OBJ file to encrypt.";
             if (OpenFile.ShowDialog() == DialogResult.OK)
             {
